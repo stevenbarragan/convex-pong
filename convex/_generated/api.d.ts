@@ -20,6 +20,7 @@ import type * as joinOrCreateGame from "../joinOrCreateGame";
 import type * as movePaddle from "../movePaddle";
 import type * as updateBall from "../updateBall";
 import type * as updateGameStatus from "../updateGameStatus";
+import type * as updatePing from "../updatePing";
 
 /**
  * A type describing your app's public Convex API.
@@ -41,4 +42,5 @@ export type API = ApiFromModules<{
   movePaddle: typeof movePaddle;
   updateBall: typeof updateBall;
   updateGameStatus: typeof updateGameStatus;
+  updatePing: typeof updatePing;
 }>;

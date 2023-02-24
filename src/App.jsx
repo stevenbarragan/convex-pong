@@ -35,6 +35,7 @@ function App() {
   const advanceBall      = useMutation("advanceBall");
   const movePaddle       = useMutation("movePaddle");
   const countDown        = useMutation("countDown");
+  const updatePing       = useMutation("updatePing");
 
   const [gameId, setGameId]   = useState(null);
   const [ballId, setBallId]   = useState(null);
@@ -116,6 +117,8 @@ function App() {
       setBallId(game.ballId);
       setRightId(game.right);
       setLeftId(game.left);
+
+      setInterval(() => { updatePing(game._id, player) }, 1000)
     }
   }, [game]);
 
@@ -151,6 +154,10 @@ function App() {
     clearInterval(gameInterval);
 
     startCountDown()
+  }
+
+  function stopGame() {
+    clearInterval(gameInterval);
   }
 
   function handleKeyDown(event) {
@@ -209,6 +216,15 @@ function App() {
         break;
         case 'reset':
           resetGame()
+        break;
+        case 'disconnected':
+          if (player == 'left') {
+            text.text("right player gave up");
+          } else {
+            text.text("left player gave up");
+          }
+
+          stopGame()
         break;
       }
     }

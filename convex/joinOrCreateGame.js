@@ -23,11 +23,19 @@ export default mutation(async ({ db }, boardSize, paddleSize) => {
 
 	const left = await db.insert("paddles", {
 		position: (boardSize - paddleSize) / 2
-	})
+	});
 
 	const right = await db.insert("paddles", {
 		position: (boardSize - paddleSize) / 2
-	})
+	});
+
+	const leftPing = await db.insert("pings", {
+		time: Math.floor(Date.now() / 1000)
+	});
+
+	const rightPing = await db.insert("pings", {
+		time: Math.floor(Date.now() / 1000)
+	});
 
 	const gameData = {
 		status: 'waiting',
@@ -36,7 +44,9 @@ export default mutation(async ({ db }, boardSize, paddleSize) => {
 		left,
 		right,
 		leftScore: 0,
-		rightScore: 0
+		rightScore: 0,
+		leftPing,
+		rightPing
 	};
 
 	const game = await db.insert("games", gameData);
