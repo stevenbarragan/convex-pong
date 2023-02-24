@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useMutation, useQuery } from "../convex/_generated/react";
 import reactLogo from './assets/react.svg'
 import './App.css'
 
@@ -9,46 +10,36 @@ const K_KEY = 75; // up
 const J_KEY = 74; // down
 
 const paddleLength = 100;
-const paddleWidth = 10;
-const boardSize = 600;
-const ballSize = 20;
-
-function toRadians (angle) {
-  return angle * (Math.PI / 180);
-}
-
-function calculateRightAngle(position) {
-	return 140 * (100 - position) / paddleLength + 110
-}
-
-function calculateLeftAngle(position) {
-	return 140 * position / paddleLength + 290
-}
-
-function invertAngle(angle) {
-	return angle + 180
-}
-
-function clamp(number, min, max) {
-  return Math.max(min, Math.min(number, max));
-}
+const paddleWidth  = 10;
+const boardSize    = 600;
+const ballSize     = 20;
 
 function App() {
-	const [boardSvg, setBoardSvg] = useState(null);
-	const [leftPaddle, setLeftPaddle] = useState(null);
-	const [rightPaddle, setRightPaddle] = useState(null);
-	const [ball, setBall] = useState(null);
-	const [ballPosition, setBallPosition] = useState({x: boardSize / 2 - 10, y: boardSize / 2 - 10});
-	const [leftPosition, setLeftPosition] = useState(0);
-	const [rightPosition, setRightPosition] = useState(0);
-	const [leftScore, setLeftScore] = useState(0);
-	const [rightScore, setRightScore] = useState(0);
-	const [direction, setDirection] = useState(0);
-	const [text, setText] = useState(null)
-	const [countDown, setCountDown] = useState(3)
-	const [countDownInterval, setCountDownInterval] = useState(null);
+	const [boardSvg, setBoardSvg]         = useState(null);
+	const [leftPaddle, setLeftPaddle]     = useState(null);
+	const [rightPaddle, setRightPaddle]   = useState(null);
+	const [ball, setBall]                 = useState(null);
+	const [text, setText]                 = useState(null)
 	const [gameInterval, setGameInterval] = useState();
-	const [gameStarted, setGameStarted] = useState(false);
+	const [gameStarted, setGameStarted]   = useState(false);
+
+	const joinOrCreateGame = useMutation("joinOrCreateGame");
+	const updateGameStatus = useMutation("updateGameStatus");
+	const updateGame       = useMutation("updateGame");
+	const advanceBall      = useMutation("advanceBall");
+	const movePaddle       = useMutation("movePaddle");
+	const countDown        = useMutation("countDown");
+
+	const [gameId, setGameId]   = useState(null);
+	const [ballId, setBallId]   = useState(null);
+	const [leftId, setLeftId]   = useState(null);
+	const [rightId, setRightId] = useState(null);
+	const [player, setPlayer]   = useState(null);
+
+	const game   = useQuery("getById", gameId);
+	const balldb = useQuery("getById", ballId);
+	const left   = useQuery("getById", leftId);
+	const right  = useQuery("getById", rightId);
 
 	useEffect(() => {
 		if (boardSvg == null) {
@@ -94,195 +85,142 @@ function App() {
 				.attr('y', boardSize / 2 - ballSize * 2)
 				.style("text-anchor", "middle")
 				.style("font-size", "34px")
-				.text('START');
+				.text('waiting for player');
 
 			setText(middleText);
-
 		}
+
+		const getGameInfo = async () => {
+			const {id, player} = await joinOrCreateGame(boardSize, paddleLength);
+
+			setGameId(id);
+			setPlayer(player);
+		};
+
+		getGameInfo();
 	}, []);
 
 	useEffect(() => {
-		if(leftPaddle) {
+		if(game && !ballId) {
+			setBallId(game.ballId);
+			setRightId(game.right);
+			setLeftId(game.left);
+		}
+	}, [game]);
+
+	useEffect(() => {
+		if(left) {
 			leftPaddle.transition()
 				.duration(100)
-				.attr("y", leftPosition)
-				.ease(d3.easeCubicOut);
+				.attr("y", left.position)
+				.ease(d3.easeQuadInOut);
 		}
-	}, [leftPosition])
+	}, [left])
 
 	useEffect(() => {
-		if(rightPaddle) {
+		if(right) {
 			rightPaddle.transition()
 				.duration(100)
-				.attr("y", rightPosition)
-				.ease(d3.easeCubicOut);
+				.attr("y", right.position)
+				.ease(d3.easeQuadInOut);
 		}
-	}, [rightPosition])
+	}, [right])
 
 	useEffect(() => {
-		if(ball) {
+		if(ball && balldb) {
 			ball.transition()
 				.duration(100)
-				.attr("cx", ballPosition.x)
-				.attr("cy", ballPosition.y)
+				.attr("cx", balldb.x)
+				.attr("cy", balldb.y)
 				.ease(d3.easeLinear);
 		}
-	}, [ballPosition])
+	}, [balldb])
 
-	useEffect(() => {
-		const cos = Math.cos(toRadians(direction));
-
-		// to the right
-		if(cos >= 0) {
-			if (ballPosition.x + ballSize >= boardSize - paddleWidth && ballPosition.y >= rightPosition && ballPosition.y <= rightPosition + paddleLength) {
-				const newDirection = calculateRightAngle(ballPosition.y - rightPosition);
-
-				setDirection(newDirection);
-			} else if(ballPosition.y <= 0){
-				const newDirection = direction + 90;
-
-				setDirection(newDirection);
-			} else if(ballPosition.y >= boardSize) {
-				const newDirection = direction - 90;
-
-				setDirection(newDirection);
-			} else if(ballPosition.x >= boardSize) {
-				setLeftScore(leftScore + 1);
-
-				resetGame(180)
-			}
-		} else {
-			if (ballPosition.x <= paddleWidth + ballSize && ballPosition.y >= leftPosition && ballPosition.y <= leftPosition + paddleLength) {
-				const newDirection = calculateLeftAngle(ballPosition.y - leftPosition);
-
-				setDirection(newDirection);
-			} else if(ballPosition.y <= 0){
-
-				const newDirection = direction - 90;
-				setDirection(newDirection);
-			} else if(ballPosition.y >= boardSize) {
-				const newDirection = direction + 90;
-
-				setDirection(newDirection);
-			} else if(ballPosition.x <= 0) {
-				setRightScore(rightScore + 1);
-
-				resetGame(0)
-			}
-		}
-	}, [ballPosition])
-
-	function resetGame(direction) {
+	function resetGame() {
 		clearInterval(gameInterval);
 
-		setDirection(direction)
-
-		setBallPosition({
-			x: boardSize / 2,
-			y: boardSize / 2
-		});
-
-		startGame()
-	}
-
-	function movePaddle(player, position) {
-		const step = 20 * position
-
-			if (player == "left") {
-				const newPosition = leftPosition + step;
-
-				if (newPosition >= 0 && newPosition <= boardSize - paddleLength ) {
-					setLeftPosition(newPosition)
-				}
-			} else {
-				const newPosition = rightPosition + step;
-
-				if (newPosition >= 0 && newPosition <= boardSize - paddleLength) {
-					setRightPosition(newPosition)
-				}
-			}
+		startCountDown()
 	}
 
 	function handleKeyDown(event) {
 		const keyCode = event.keyCode;
 
-		if(keyCode == W_KEY || keyCode == S_KEY || keyCode == J_KEY || keyCode == K_KEY) {
+		if(gameId, keyCode == W_KEY || keyCode == S_KEY || keyCode == J_KEY || keyCode == K_KEY) {
 			event.preventDefault();
 
 			switch(keyCode) {
 				case W_KEY:
-					movePaddle('left', -1)
+					movePaddle(gameId, 'left', -1, boardSize, paddleLength)
 					break;
 				case S_KEY:
-					movePaddle('left', 1)
+					movePaddle(gameId, 'left', 1, boardSize, paddleLength)
 					break;
 				case J_KEY:
-					movePaddle('right', 1)
+					movePaddle(gameId, 'right', 1, boardSize, paddleLength)
 					break;
 				case K_KEY:
-					movePaddle('right', -1)
+					movePaddle(gameId, 'right', -1, boardSize, paddleLength)
 					break;
 			}
 		}
 	}
 
-	function advanceBall(){
-		const step = 30;
+	useEffect(() => {
+		if(game) {
+			console.debug(game.status);
 
-		setDirection(direction => {
-			setBallPosition(prevPosition => {
-				return {
-					x: clamp(prevPosition.x + (Math.cos(toRadians(direction)) * step), 0, boardSize),
-					y: clamp(prevPosition.y + (Math.sin(toRadians(direction)) * step), 0, boardSize)
-				}
-			});
+			switch(game.status) {
+				case 'waiting':
+					text.text("waiting for player");
+				break;
+				case 'ready':
+					text.text("CLICK TO START");
+				break;
+				case 'countdown':
+					text.text(game.countDown);
 
-			return direction
-		});
-	}
-
-	function startGame(){
-		text.text(countDown);
-
-		const interval = setInterval(() => {
-			setCountDown(countDown => {
-				if (countDown == 1 ) {
+					setTimeout(() => { countDown(gameId) }, 1000);
+				break;
+				case 'kickball':
 					text.text("");
 
-					setCountDownInterval((countDownInterval) => {
-						clearInterval(countDownInterval);
-					})
+					updateGameStatus(gameId, 'playing');
 
-					const game = setInterval(()=> { advanceBall() }, 100);
-					setGameInterval(game);
+					const gameInterval = setInterval(()=> {
+						advanceBall(gameId, boardSize, ballSize, paddleWidth, paddleLength)
+					}, 150);
 
-					return 3
-				} else {
-					const newCountDown = countDown - 1;
+					setGameInterval(gameInterval);
+				break;
+				case 'reset':
+					resetGame()
+				break;
+			}
+		}
+	}, [game]);
 
-					text.text(newCountDown);
-
-					return newCountDown;
-				}
-			})
-		}, 1000);
-
-		setCountDownInterval(interval);
+	function startCountDown(){
+		updateGameStatus(gameId, 'countdown');
 	}
 
 	function handleClick(){
-		if(gameStarted == false){
+		// && game.status == 'ready'
+		if(game && gameStarted == false){
 			setGameStarted(true);
 
-			startGame()
+			startCountDown()
 		}
 	}
 
 	return (
 		<div className="app" onKeyDown={handleKeyDown} onClick={handleClick} tabIndex="0">
 			<div className="scores">
-				<h1 className="left-score">{leftScore}</h1>
-				<h1 className="right-score">{rightScore}</h1>
+				{game && 
+					<div>
+						<h1 className="left-score">{game.leftScore}</h1>
+						<h1 className="right-score">{game.rightScore}</h1>
+					</div>
+				}
 			</div>
 		</div>
 	)
