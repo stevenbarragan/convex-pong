@@ -9,7 +9,7 @@ function toRadians (angle) {
 }
 
 function calculateRightAngle(position, paddleLength) {
-	return 140 * (100 - position) / paddleLength + 110
+	return 140 * (paddleLength - position) / paddleLength + 110
 }
 
 function calculateLeftAngle(position, paddleLength) {
@@ -24,10 +24,10 @@ export default mutation(async ({ db }, gameId, boardSize, ballSize, paddleWidth,
 	if (game.status == 'playing') {
 		var ball = await db.get(game.ballId);
 
-		db.patch(game.ballId, {
-			x: clamp(ball.x + (Math.cos(toRadians(ball.direction)) * step), 0, boardSize),
-			y: clamp(ball.y + (Math.sin(toRadians(ball.direction)) * step), 0, boardSize)
-		});
+		const x = clamp(ball.x + (Math.cos(toRadians(ball.direction)) * step), 0, boardSize);
+		const y = clamp(ball.y + (Math.sin(toRadians(ball.direction)) * step), ballSize, boardSize - ballSize);
+
+		db.patch(game.ballId, {x ,y});
 
 		const cos = Math.cos(toRadians(ball.direction));
 
@@ -35,19 +35,19 @@ export default mutation(async ({ db }, gameId, boardSize, ballSize, paddleWidth,
 		if(cos >= 0) {
 			const right = await db.get(game.right);
 
-			if (ball.x + ballSize >= boardSize - paddleWidth && ball.y >= right.position && ball.y <= right.position + paddleLength) {
-				const newDirection = calculateRightAngle(ball.y - right.position, paddleLength);
+			if (x + ballSize >= boardSize - paddleWidth && y >= right.position && y <= right.position + paddleLength) {
+				const newDirection = calculateRightAngle(y - right.position, paddleLength);
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.y <= 0){
+			} else if(y <= ballSize){
 				const newDirection = ball.direction + 90;
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.y >= boardSize) {
+			} else if(y >= boardSize - ballSize) {
 				const newDirection = ball.direction - 90;
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.x >= boardSize) {
+			} else if(x >= boardSize) {
 				db.patch(ball._id, {
 					direction: 180,
 					x: boardSize / 2,
@@ -63,19 +63,19 @@ export default mutation(async ({ db }, gameId, boardSize, ballSize, paddleWidth,
 		} else {
 			const left = await db.get(game.left);
 
-			if (ball.x <= paddleWidth + ballSize && ball.y >= left.position && ball.y <= left.position + paddleLength) {
-				const newDirection = calculateLeftAngle(ball.y - left.position, paddleLength);
+			if (x <= paddleWidth + ballSize && y >= left.position && y <= left.position + paddleLength) {
+				const newDirection = calculateLeftAngle(y - left.position, paddleLength);
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.y <= 0){
+			} else if(y <= ballSize){
 				const newDirection = ball.direction - 90;
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.y >= boardSize) {
+			} else if(y >= boardSize - ballSize) {
 				const newDirection = ball.direction + 90;
 
 				db.patch(ball._id, {direction: newDirection})
-			} else if(ball.x <= 0) {
+			} else if(x <= 0) {
 				db.patch(ball._id, {
 					direction: 0,
 					x: boardSize / 2,

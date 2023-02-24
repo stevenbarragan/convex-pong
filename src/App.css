@@ -1,13 +1,14 @@
+body {
+  font-family: 'Press Start 2P';
+}
+
 #root {
   max-width: 1280px;
   margin: 0 auto;
   padding: 2rem;
 }
 
-.left-score {
-  float: left;
-}
-
-.right-score {
-  float: right;
+.scores {
+  display: flex;
+  justify-content: space-around;
 }

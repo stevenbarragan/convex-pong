@@ -19,7 +19,6 @@ import type * as getPaddle from "../getPaddle";
 import type * as joinOrCreateGame from "../joinOrCreateGame";
 import type * as movePaddle from "../movePaddle";
 import type * as updateBall from "../updateBall";
-import type * as updateGame from "../updateGame";
 import type * as updateGameStatus from "../updateGameStatus";
 
 /**
@@ -41,6 +40,5 @@ export type API = ApiFromModules<{
   joinOrCreateGame: typeof joinOrCreateGame;
   movePaddle: typeof movePaddle;
   updateBall: typeof updateBall;
-  updateGame: typeof updateGame;
   updateGameStatus: typeof updateGameStatus;
 }>;
