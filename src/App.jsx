@@ -57,6 +57,8 @@ function App() {
   useEffect(() => {
     getGameInfo();
 
+    document.getElementById('app').focus();
+
     if (boardSvg == null) {
       var svg = d3.select("#board")
         .append("svg")
@@ -223,7 +225,7 @@ function App() {
   }
 
   return (
-    <div className="app" onKeyDown={handleKeyDown} onClick={handleClick} tabIndex="0">
+    <div id="app" onKeyDown={handleKeyDown} onClick={handleClick} tabIndex="0">
         {game &&
         <div className="scores">
           <h1 className="left-score">{game.leftScore}</h1>

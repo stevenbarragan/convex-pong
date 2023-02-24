@@ -12,3 +12,7 @@ body {
   display: flex;
   justify-content: space-around;
 }
+
+#app:focus {
+  outline:0;
+}
