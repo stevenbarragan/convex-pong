@@ -16,10 +16,10 @@ function calculateLeftAngle(position, paddleLength) {
 	return 140 * position / paddleLength + 290
 }
 
-const step = 20;
 
 export default mutation(async ({ db }, gameId, boardSize, ballSize, paddleWidth, paddleLength) => {
 	var game = await db.get(gameId);
+	const step = 30;
 
 	if (game.status == 'playing') {
 		var ball = await db.get(game.ballId);

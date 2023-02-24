@@ -3,11 +3,12 @@ import { useMutation, useQuery } from "../convex/_generated/react";
 import reactLogo from './assets/react.svg'
 import './App.css'
 
-const W_KEY = 87; // up
-const S_KEY = 83; // down
-
-const K_KEY = 75; // up
-const J_KEY = 74; // down
+const W_KEY    = 87; // up
+const S_KEY    = 83; // down
+const UP_KEY   = 38; // up
+const DOWN_KEY = 40; // down
+const K_KEY    = 75; // up
+const J_KEY    = 74; // down
 
 const paddleLength = 100;
 const paddleWidth  = 15;
@@ -28,7 +29,6 @@ function App() {
   const [ball, setBall]                 = useState(null);
   const [text, setText]                 = useState(null)
   const [gameInterval, setGameInterval] = useState();
-  const [gameStarted, setGameStarted]   = useState(false);
 
   const joinOrCreateGame = useMutation("joinOrCreateGame");
   const updateGameStatus = useMutation("updateGameStatus");
@@ -154,21 +154,19 @@ function App() {
   function handleKeyDown(event) {
     const keyCode = event.keyCode;
 
-    if(gameId, keyCode == W_KEY || keyCode == S_KEY || keyCode == J_KEY || keyCode == K_KEY) {
+    if(gameId, keyCode == W_KEY || keyCode == S_KEY || keyCode == J_KEY || keyCode == K_KEY || keyCode == UP_KEY || keyCode == DOWN_KEY) {
       event.preventDefault();
 
       switch(keyCode) {
         case W_KEY:
-          movePaddle(gameId, 'left', -1, boardSize, paddleLength)
+        case K_KEY:
+        case UP_KEY:
+          movePaddle(gameId, player, -1, boardSize, paddleLength)
           break;
         case S_KEY:
-          movePaddle(gameId, 'left', 1, boardSize, paddleLength)
-          break;
         case J_KEY:
-          movePaddle(gameId, 'right', 1, boardSize, paddleLength)
-          break;
-        case K_KEY:
-          movePaddle(gameId, 'right', -1, boardSize, paddleLength)
+        case DOWN_KEY:
+          movePaddle(gameId, player, 1, boardSize, paddleLength)
           break;
       }
     }
@@ -188,20 +186,24 @@ function App() {
         case 'countdown':
           text.text(game.countDown);
 
-          setTimeout(() => { countDown(gameId) }, 1000);
+          if(player == 'left') {
+            setTimeout(() => { countDown(gameId) }, 1000);
+          }
         break;
         case 'kickball':
           text.text("");
 
-          const velocity = Math.max(120 - ((game.leftScore + game.rightScore) * 6), 60);
+          if(player == 'left') {
+            const velocity = Math.max(110 - ((game.leftScore + game.rightScore) * 5), 80);
 
-          const gameInterval = setInterval(()=> {
-            advanceBall(gameId, boardSize, ballSize, paddleWidth, paddleLength)
-          }, velocity);
+            const gameInterval = setInterval(()=> {
+              advanceBall(gameId, boardSize, ballSize, paddleWidth, paddleLength)
+            }, velocity);
 
-          setGameInterval(gameInterval);
+            setGameInterval(gameInterval);
 
-          updateGameStatus(gameId, 'playing');
+            updateGameStatus(gameId, 'playing');
+          }
         break;
         case 'reset':
           resetGame()
@@ -215,10 +217,7 @@ function App() {
   }
 
   function handleClick(){
-    // && game.status == 'ready'
-    if(game && gameStarted == false){
-      setGameStarted(true);
-
+    if(game && game.status == 'ready'){
       startCountDown()
     }
   }
