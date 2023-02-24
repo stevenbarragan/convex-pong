@@ -250,6 +250,10 @@ function App() {
         </div>
         }
       <div id="board"></div>
+      <div>
+        <p>W, K and ↑ keys move paddle up</p>
+        <p>S, J and ↓ keys move paddle down</p>
+      </div>
     </div>
   )
 }
